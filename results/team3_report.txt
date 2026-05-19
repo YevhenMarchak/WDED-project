@@ -1,0 +1,8 @@
+=== RAPORT: team3 ===
+
+Czas wykonania: 110.958065 s
+Liczba przedziałów: 31
+Liczba konfliktów: 0
+
+=== KONFLIKTY ===
+Brak konfliktów
