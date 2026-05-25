@@ -1,23 +1,16 @@
 import numpy as np
 import pandas as pd
 
-#Filipek Krystian - 5
-
 # ==============================================================================
 # PROJEKT: ZACHŁANNA DYSKRETYZACJA ZSTĘPUJĄCA (GLOBALNA)
 # ZESPÓŁ: Konrad Fugiel, Filip Lisowski, Oliwier Hędrzak, Krystian Filipek
 # ==============================================================================
 
 def discretize(df):
-    """
-    Główna funkcja dyskretyzująca. Przyjmuje DataFrame, zwraca zdyskretyzowany DataFrame.
-    Przedziały zapisywane są w krotkach (tuples).
-    """
     # ==================================================================
     # SEKCJA 1: PRZYGOTOWANIE DANYCH WEJŚCIOWYCH
-    # AUTOR: Konrad Fugiel (Data Engineer)
+    # AUTOR: Konrad Fugiel
     # ==================================================================
-    # Zgodnie z wymaganiami, ostatnia kolumna to zawsze decyzja
     kolumny_warunkowe = df.columns[:-1]
     kolumna_decyzyjna = df.columns[-1]
 
@@ -42,10 +35,10 @@ def discretize(df):
     restOfCuts = list(wszystkie_potencjalne_ciecia)
 
     # ==================================================================
-    # SEKCJA 2: ALGORYTM ZACHŁANNY GLOBALNY (SZUKANIE NAJLEPSZYCH CIĘĆ)
-    # AUTOR: Filip Lisowski (Core ML Engineer)
+    # SEKCJA 2: SZUKANIE NAJLEPSZYCH CIĘĆ
+    # AUTOR: Filip Lisowski
     # ==================================================================
-    # Pętla działa dopóki nie odseparujemy wszystkich możliwych par
+    # Pętla działa, dopóki nie odseparujemy wszystkich możliwych par
     while len(pary_odseparowane) < len(pary_do_oddzielenia) and len(restOfCuts) > 0:
         najlepsze_ciecie = None
         najwiecej_nowych_par = -1
@@ -57,7 +50,7 @@ def discretize(df):
             for (i, j) in pary_do_oddzielenia:
                 if (i, j) in pary_odseparowane:
                     continue
-                # Sprawdzenie czy cięcie rozdziela obiekty na danej cesze
+                # Sprawdzenie, czy cięcie rozdziela obiekty na danej cesze
                 if (X_arr[i, col] <= ciecie and X_arr[j, col] > ciecie) or (
                         X_arr[j, col] <= ciecie and X_arr[i, col] > ciecie):
                     nowo_odseparowane.add((i, j))
@@ -75,13 +68,13 @@ def discretize(df):
             break
 
     # ==================================================================
-    # SEKCJA 3: POST-PROCESSING (USUWANIE ZBĘDNYCH CIĘĆ I TUPLE)
-    # AUTOR: Oliwier Hędrzak (Optimization Engineer)
+    # SEKCJA 3: POST-PROCESSING
+    # AUTOR: Oliwier Hędrzak
     # ==================================================================
     ostateczne_ciecia = []
     max_separacja = len(pary_odseparowane)
 
-    # Opcja 2d: Weryfikujemy każde cięcie z osobna, czy jest "nadmiarowe"
+    # Weryfikujemy każde cięcie z osobna, czy jest zbędne
     for idx in range(len(selectedCuts)):
         testowane = selectedCuts[idx]
         pozostale = ostateczne_ciecia + selectedCuts[idx + 1:]
@@ -95,10 +88,10 @@ def discretize(df):
         if len(odseparowane_bez) < max_separacja:
             ostateczne_ciecia.append(testowane)
 
-    # Budowanie docelowego systemu decyzyjnego w oparciu o Tuple (Krotki)
+    # Budowanie systemu decyzyjnego w oparciu o tuple
     df_wynikowy = pd.DataFrame(index=df.index)
 
-    # Funkcja pomocnicza zamieniająca wartość liczbową na krotkę przedziału [a, b)
+    # Funkcja pomocnicza zamieniająca wartość liczbową na tuple przedziału [a, b)
     def mapuj_na_tuple(wartosc, ciecia_kolumny):
         if not ciecia_kolumny:
             return (float('-inf'), float('inf'))
@@ -113,7 +106,7 @@ def discretize(df):
     for (col, c) in ostateczne_ciecia:
         ciecia_zgrupowane[col].append(c)
 
-    # Aplikowanie mapowania na tuplę bez zmieniania indeksu i rzędów
+    # Aplikowanie mapowania na tuple bez zmieniania indeksu i rzędów
     for col_idx, nazwa in enumerate(kolumny_warunkowe):
         ciecia_tej_kolumny = sorted(ciecia_zgrupowane[col_idx])
         df_wynikowy[nazwa] = df[nazwa].apply(lambda x: mapuj_na_tuple(x, ciecia_tej_kolumny))
@@ -121,16 +114,11 @@ def discretize(df):
     df_wynikowy[kolumna_decyzyjna] = df[kolumna_decyzyjna]
     return df_wynikowy
 
-
 # ==================================================================
-# SEKCJA 4: RAPORTOWANIE KONFLIKTÓW I TESTOWANIE
-# AUTOR: Krystian Filipek (QA & Integration Lead)
+# SEKCJA 4: RAPORTOWANIE KONFLIKTÓW
+# AUTOR: Krystian Filipek
 # ==================================================================
 def raportuj_konflikty(df_wynikowy):
-    """
-    Znajduje i wypisuje niespójności deterministyczne (konflikty)
-    według sztywnych zasad ze specyfikacji.
-    """
     kolumny_warunkowe = list(df_wynikowy.columns[:-1])
     kolumna_decyzyjna = df_wynikowy.columns[-1]
 
@@ -144,7 +132,6 @@ def raportuj_konflikty(df_wynikowy):
         # Jeśli w grupie identycznych obiektów jest więcej niż 1 klasa decyzyjna - mamy konflikt
         if grupa[kolumna_decyzyjna].nunique() > 1:
             indeksy_konfliktu = list(grupa.index)
-            # Wypisujemy po przecinku, np: 1, 2, 3
             print(", ".join(map(str, indeksy_konfliktu)))
             liczba_konfliktowych_wierszy += len(indeksy_konfliktu)
 

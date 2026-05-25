@@ -20,7 +20,7 @@ from testing.summary import (
 )
 
 # DANE TESTOWE
-df = pd.read_csv("data/data1.csv")
+df = pd.read_csv("data/data0.csv")
 
 # LISTA ALGORYTMÓW
 algorithms = {

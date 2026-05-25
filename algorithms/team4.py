@@ -1,96 +1,116 @@
 import pandas as pd
 import numpy as np
 
-#Dlugosz - 2
-def szybkie_sprawdzanie_konfliktow(df, slownik_ciec, kolumny_warunkowe, kolumna_decyzyjna):
-    """
-    Funkcja pomocnicza do błyskawicznego sprawdzania konfliktów.
-    """
-    df_temp = pd.DataFrame()
-    for col in kolumny_warunkowe:
-        df_temp[col] = np.digitize(df[col], slownik_ciec[col])
 
-    df_temp['decyzja'] = df[kolumna_decyzyjna].values
+# =====================================================================
+# [Artur Jurkowski]
+# ROLA: Walidacja, integralność danych i śledzenie konfliktów.
+# =====================================================================
+def policz_globalne_konflikty(X, y, aktywne_ciecia):
+    sygnatury = np.zeros(X.shape, dtype=int)
 
-    liczba_konfliktow = 0
-    for _, grupa in df_temp.groupby(list(kolumny_warunkowe)):
-        if grupa['decyzja'].nunique() > 1:
-            liczba_konfliktow += len(grupa)
+    for j in range(X.shape[1]):
+        if not aktywne_ciecia[j]:
+            sygnatury[:, j] = 0
+        else:
+            sygnatury[:, j] = np.searchsorted(aktywne_ciecia[j], X[:, j])
 
-    return liczba_konfliktow
+    slownik_sygnatur = {}
+    for i, rzad in enumerate(sygnatury):
+        klucz = tuple(rzad)
+        if klucz not in slownik_sygnatur:
+            slownik_sygnatur[klucz] = []
+        slownik_sygnatur[klucz].append(y[i])
+
+    ilosc_konfliktow = 0
+    for decyzje in slownik_sygnatur.values():
+        if len(set(decyzje)) > 1:
+            ilosc_konfliktow += len(decyzje)
+    return ilosc_konfliktow
+
+
+# =====================================================================
+# [Kamil Krawczyk]
+# ROLA: Metryki zanieczyszczenia i preprocessing danych.
+# =====================================================================
+def szybki_gini(podzbior_y):
+    if len(podzbior_y) == 0:
+        return 0.0
+    _, zliczenia = np.unique(podzbior_y, return_counts=True)
+    return 1.0 - np.sum((zliczenia / len(podzbior_y)) ** 2)
 
 
 def discretize(df):
-    """
-    Metoda zachłannego usuwania najgorszych cięć w dół (True Backward Elimination).
-    W każdym kroku ocenia wszystkie cięcia i usuwa to, które wnosi najmniej informacji.
-    """
-    df_disc = df.copy()
-    kolumny_warunkowe = df.columns[:-1]
+    df_wyjscie = df.copy()
     kolumna_decyzyjna = df.columns[-1]
+    kolumny_warunkowe = df.columns[:-1]
 
-    # 1. KROK: Zebranie wszystkich potencjalnych cięć (tylko na zmianach klas)
-    slownik_ciec = {}
+    y = df[kolumna_decyzyjna].values
+    X = df[kolumny_warunkowe].values
 
-    for col in kolumny_warunkowe:
-        temp = df[[col, kolumna_decyzyjna]].sort_values(by=col)
-        wartosci = temp[col].values
-        decyzje = temp[kolumna_decyzyjna].values
+    # -----------------------------------------------------------------
+    # [Kamil]: Wyciąganie unikalnych wartości i generowanie puli cięć
+    # -----------------------------------------------------------------
+    aktywne_ciecia = []
+    for j in range(X.shape[1]):
+        wartosci_kolumny = pd.to_numeric(df[kolumny_warunkowe[j]], errors='coerce').values
+        X[:, j] = wartosci_kolumny
+        unikalne_wartosci = np.sort(np.unique(wartosci_kolumny[~np.isnan(wartosci_kolumny)]))
 
-        wszystkie_ciecia = []
-        for i in range(len(wartosci) - 1):
-            if wartosci[i] != wartosci[i + 1] and decyzje[i] != decyzje[i + 1]:
-                ciecie = (wartosci[i] + wartosci[i + 1]) / 2.0
-                wszystkie_ciecia.append(ciecie)
-
-        slownik_ciec[col] = sorted(list(set(wszystkie_ciecia)))
-
-    bazowe_konflikty = szybkie_sprawdzanie_konfliktow(df, slownik_ciec, kolumny_warunkowe, kolumna_decyzyjna)
-
-    # 2. KROK: PRAWDZIWIE ZACHŁANNE USUWANIE W DÓŁ
-    while True:
-        najlepsze_ciecie_do_usuniecia = None
-        najlepsza_kolumna = None
-        min_konflikty = float('inf')
-
-        # Testujemy usunięcie każdego cięcia po kolei we wszystkich kolumnach
-        for col in kolumny_warunkowe:
-            for i in range(len(slownik_ciec[col])):
-                testowane_ciecie = slownik_ciec[col].pop(i)
-                aktualne_konflikty = szybkie_sprawdzanie_konfliktow(df, slownik_ciec, kolumny_warunkowe,
-                                                                    kolumna_decyzyjna)
-
-                # Szukamy usunięcia, które pozostawia jak najmniej konfliktów
-                if aktualne_konflikty < min_konflikty:
-                    min_konflikty = aktualne_konflikty
-                    najlepsze_ciecie_do_usuniecia = testowane_ciecie
-                    najlepsza_kolumna = col
-
-                # Przywracamy cięcie na swoje miejsce do dalszych testów
-                slownik_ciec[col].insert(i, testowane_ciecie)
-
-        # Jeśli znalezliśmy "najgorsze" cięcie i jego usunięcie NIE zwiększa konfliktów, usuwamy je na stałe
-        if najlepsza_kolumna is not None and min_konflikty <= bazowe_konflikty:
-            slownik_ciec[najlepsza_kolumna].remove(najlepsze_ciecie_do_usuniecia)
+        if len(unikalne_wartosci) <= 1:
+            aktywne_ciecia.append([])
         else:
-            # Żadne cięcie nie może już zostać usunięte bez wygenerowania nowych konfliktów. Koniec optymalizacji.
-            break
+            ciecia = ((unikalne_wartosci[:-1] + unikalne_wartosci[1:]) / 2.0).tolist()
+            aktywne_ciecia.append(ciecia)
 
-    # 3. KROK: Tworzenie przedziałów (tupli) -inf i inf
-    for col in kolumny_warunkowe:
-        ostateczne_ciecia = slownik_ciec[col]
+    # [Kamil]: Ustalenie sztywnej bazy konfliktów, których nie da się pominąć
+    bazowe_konflikty = policz_globalne_konflikty(X, y, aktywne_ciecia)
 
-        def przypisz_do_przedzialu(val):
-            if not ostateczne_ciecia:
-                return (float('-inf'), float('inf'))
-            if val < ostateczne_ciecia[0]:
-                return (float('-inf'), ostateczne_ciecia[0])
-            for k in range(len(ostateczne_ciecia) - 1):
-                if ostateczne_ciecia[k] <= val < ostateczne_ciecia[k + 1]:
-                    return (ostateczne_ciecia[k], ostateczne_ciecia[k + 1])
-            return (ostateczne_ciecia[-1], float('inf'))
+    # =====================================================================
+    # [Patryk Długosz]
+    # ROLA: Architektura głównej pętli algorytmu Bottom-Up i formatowanie wyjścia.
+    # =====================================================================
 
-        df_disc[col] = df_disc[col].apply(przypisz_do_przedzialu)
+    # [Patryk]: Globalna ocena użyteczności wszystkich cięć z użyciem metryki od Kamila
+    globalna_pula = []
+    for j in range(X.shape[1]):
+        for idx, ciecie in enumerate(aktywne_ciecia[j]):
+            lewa_granica = aktywne_ciecia[j][idx - 1] if idx > 0 else -np.inf
+            prawa_granica = aktywne_ciecia[j][idx + 1] if idx < len(aktywne_ciecia[j]) - 1 else np.inf
+            maska = (X[:, j] >= lewa_granica) & (X[:, j] < prawa_granica)
 
-    return df_disc
+            wynik = szybki_gini(y[maska])
+            globalna_pula.append((wynik, j, ciecie))
 
+    globalna_pula.sort(key=lambda element: element[0])
+
+    # [Patryk]: Zachłanne, globalne usuwanie najgorszych cięć
+    for wynik, j, ciecie in globalna_pula:
+        if ciecie in aktywne_ciecia[j]:
+            aktywne_ciecia[j].remove(ciecie)
+
+            # [Artur]: Walidacja bezpieczeństwa bazy po usunięciu cięcia
+            aktualne_konflikty = policz_globalne_konflikty(X, y, aktywne_ciecia)
+
+            if aktualne_konflikty > bazowe_konflikty:
+                aktywne_ciecia[j].append(ciecie)
+                aktywne_ciecia[j].sort()
+
+    # -----------------------------------------------------------------
+    # [Patryk]: Konwersja na tuple, dodanie nieskończoności na brzegach
+    #            i mapowanie do DataFrame (zgodność ze specyfikacją).
+    # -----------------------------------------------------------------
+    for j, kolumna in enumerate(kolumny_warunkowe):
+        ciecia = aktywne_ciecia[j]
+        granice = [-np.inf] + ciecia + [np.inf]
+        przedzialy = [(granice[i], granice[i + 1]) for i in range(len(granice) - 1)]
+
+        def mapuj_na_przedzial(wartosc, p=przedzialy):
+            for przedzial in p:
+                if przedzial[0] <= wartosc < przedzial[1]:
+                    return przedzial
+            return p[-1]
+
+        df_wyjscie[kolumna] = df_wyjscie[kolumna].apply(mapuj_na_przedzial)
+
+    return df_wyjscie

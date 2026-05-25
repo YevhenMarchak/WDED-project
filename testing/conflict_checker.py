@@ -31,9 +31,10 @@ def find_conflicts(discretized_df):
 
         # konflikt = różne decyzje
         if len(decisions) > 1:
+            CSV_LINE_OFFSET = 2
 
             conflict_indexes = [
-                idx
+                idx + CSV_LINE_OFFSET
                 for idx, _ in values
             ]
 
