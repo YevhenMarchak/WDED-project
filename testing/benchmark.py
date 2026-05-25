@@ -6,35 +6,32 @@ from testing.conflict_checker import (
 )
 
 
+import math
+
+
 def normalize_interval(interval):
-    """
-    Zamienia różne reprezentacje
-    przedziałów na jednolity tuple
-    """
 
-    # pandas.Interval
-    if hasattr(interval, "left"):
+    left, right = interval
 
-        return (
-            float(interval.left),
-            float(interval.right)
-        )
+    # normalizacja inf
+    if math.isinf(left):
+        left = float("-inf")
 
-    # tuple/list
-    if isinstance(interval, (tuple, list)):
+    else:
+        left = round(float(left), 10)
 
-        return (
-            float(interval[0]),
-            float(interval[1])
-        )
+    if math.isinf(right):
+        right = float("inf")
 
-    # fallback
-    return interval
+    else:
+        right = round(float(right), 10)
+
+    return (left, right)
 
 
 def count_intervals(discretized_df):
     """
-    Liczy liczbę przedziałów
+    Liczy liczbę różnych przedziałów
     osobno dla każdej kolumny
     """
 
@@ -44,9 +41,17 @@ def count_intervals(discretized_df):
 
     for col in condition_cols:
 
-        total += len(
-            discretized_df[col].unique()
-        )
+        unique_intervals = set()
+
+        for interval in discretized_df[col]:
+
+            normalized = normalize_interval(
+                interval
+            )
+
+            unique_intervals.add(normalized)
+
+        total += len(unique_intervals)
 
     return total
 

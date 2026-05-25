@@ -1,6 +1,6 @@
 === RAPORT: team1 ===
 
-Czas wykonania: 0.019962 s
+Czas wykonania: 0.019981 s
 Liczba przedziałów: 16
 Liczba konfliktów: 0
 

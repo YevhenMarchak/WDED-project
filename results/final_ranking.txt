@@ -3,19 +3,19 @@
 1. team4
    Konflikty: 0
    Przedziały: 13
-   Czas: 0.009375 s
+   Czas: 0.009048 s
 
 2. team2
    Konflikty: 0
    Przedziały: 13
-   Czas: 0.085670 s
+   Czas: 0.088619 s
 
 3. team1
    Konflikty: 0
    Przedziały: 16
-   Czas: 0.019962 s
+   Czas: 0.019981 s
 
 4. team3
    Konflikty: 0
    Przedziały: 16
-   Czas: 0.082601 s
+   Czas: 0.078366 s
