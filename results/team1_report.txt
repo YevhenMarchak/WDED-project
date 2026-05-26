@@ -1,10 +1,12 @@
 === RAPORT: team1 ===
 
-Czas wykonania: 182.962550 s
-Liczba przedziałów: 77
-Liczba konfliktów: 6
+Czas wykonania: 2.338102 s
+Liczba przedziałów: 28
+Liczba konfliktów: 13
 
 === KONFLIKTY ===
-134, 136
-392, 396
-773, 775
+87, 493
+173, 333
+428, 444, 485, 511
+441, 510
+466, 486, 501

@@ -61,7 +61,7 @@ def load_dataset(path):
     return df
 
 
-df = load_dataset("data/data3"
+df = load_dataset("data/data2"
                   ".csv")
 
 print(f"Wczytano dataset: {df.shape[0]} wierszy, "

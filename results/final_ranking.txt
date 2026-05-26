@@ -1,21 +1,21 @@
 === FINALNY RANKING ALGORYTMÓW ===
 
-1. team2
-   Konflikty: 6
-   Przedziały: 72
-   Czas: 4.310014 s
+1. team4
+   Konflikty: 13
+   Przedziały: 27
+   Czas: 0.050605 s
 
-2. team3
-   Konflikty: 6
-   Przedziały: 77
-   Czas: 36.439976 s
+2. team2
+   Konflikty: 13
+   Przedziały: 27
+   Czas: 0.063950 s
 
 3. team1
-   Konflikty: 6
-   Przedziały: 77
-   Czas: 182.962550 s
+   Konflikty: 13
+   Przedziały: 28
+   Czas: 2.338102 s
 
-4. team4
-   Konflikty: 6
-   Przedziały: 85
-   Czas: 0.574991 s
+4. team3
+   Konflikty: 13
+   Przedziały: 28
+   Czas: 3.958342 s

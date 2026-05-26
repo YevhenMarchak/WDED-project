@@ -37,13 +37,14 @@ def is_valid_interval(interval):
 
 def count_unique_intervals(df):
     """
-    Liczy liczbę różnych przedziałów
+    Liczy liczbę przedziałów
+    osobno dla każdej kolumny
     """
 
-    unique_intervals = set()
+    total = 0
 
-    for col in df.columns[:-1]:  # bez decyzji
-        unique_intervals.update(df[col].unique())
+    for col in df.columns[:-1]:
+        total += len(df[col].unique())
 
-    return len(unique_intervals)
+    return total
 
