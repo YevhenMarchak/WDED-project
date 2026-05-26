@@ -20,7 +20,51 @@ from testing.summary import (
 )
 
 # DANE TESTOWE
-df = pd.read_csv("data/data0.csv")
+def load_dataset(path):
+    """
+    Wczytuje CSV i wymusza sensowny układ:
+      - pierwszy wiersz traktowany jako nagłówek tylko jeśli faktycznie
+        jest tekstowy (a nie wartościami liczbowymi)
+      - wszystkie kolumny cech (poza ostatnią - decyzyjną) konwertowane na float
+      - ostatnia kolumna zostaje jak jest (decyzja moze byc int lub str)
+    """
+    # Sprawdzamy pierwszy wiersz: jesli da sie zamienic kazda wartosc na float,
+    # to znaczy ze nie ma naglowka i trzeba wczytac z header=None.
+    with open(path, "r", encoding="utf-8") as f:
+        first_line = f.readline().strip()
+
+    first_cells = [c.strip() for c in first_line.split(",")]
+
+    def is_number(s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
+
+    has_header = not all(is_number(c) for c in first_cells)
+
+    if has_header:
+        df = pd.read_csv(path)
+    else:
+        # Brak naglowka -> generujemy nazwy a1, a2, ..., dec
+        n_cols = len(first_cells)
+        names = [f"a{i+1}" for i in range(n_cols - 1)] + ["dec"]
+        df = pd.read_csv(path, header=None, names=names)
+
+    # Wymuszamy typ numeryczny na cechach (wszystko poza ostatnia kolumna).
+    # Jezeli ktoras kolumna mialaby smieci, wyrzucimy blad z jasnym komunikatem.
+    feature_cols = df.columns[:-1]
+    for col in feature_cols:
+        df[col] = pd.to_numeric(df[col], errors="raise")
+
+    return df
+
+
+df = load_dataset("data/data0.csv")
+
+print(f"Wczytano dataset: {df.shape[0]} wierszy, "
+      f"{df.shape[1]} kolumn (kolumny: {list(df.columns)})")
 
 # LISTA ALGORYTMÓW
 algorithms = {

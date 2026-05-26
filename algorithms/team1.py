@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 
-#Buczulinski - 1
-
+#Bartosz Buczuliński
 def discretize(df):
     """
     Zachłanny algorytm dyskretyzacji danych.

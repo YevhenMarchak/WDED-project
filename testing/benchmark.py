@@ -1,81 +1,61 @@
 import time
 
+from testing.interval_utils import count_unique_intervals
+
 from testing.conflict_checker import (
     find_conflicts,
     count_conflict_rows
 )
 
 
-import math
-
-
-def normalize_interval(interval):
-
-    left, right = interval
-
-    # normalizacja inf
-    if math.isinf(left):
-        left = float("-inf")
-
-    else:
-        left = round(float(left), 10)
-
-    if math.isinf(right):
-        right = float("inf")
-
-    else:
-        right = round(float(right), 10)
-
-    return (left, right)
-
-
-def count_intervals(discretized_df):
-    """
-    Liczy liczbę różnych przedziałów
-    osobno dla każdej kolumny
-    """
-
-    condition_cols = discretized_df.columns[:-1]
-
-    total = 0
-
-    for col in condition_cols:
-
-        unique_intervals = set()
-
-        for interval in discretized_df[col]:
-
-            normalized = normalize_interval(
-                interval
-            )
-
-            unique_intervals.add(normalized)
-
-        total += len(unique_intervals)
-
-    return total
-
-
 def evaluate_algorithm(algorithm, df):
     """
-    Pełna ocena algorytmu
+    Pełna ocena algorytmu dyskretyzującego:
+    - pomiar czasu,
+    - wypisanie przedziałów,
+    - liczenie przedziałów,
+    - wykrywanie konfliktów.
     """
-
-    # pomiar czasu
     start = time.perf_counter()
 
     discretized_df = algorithm(df)
+
+    for col in discretized_df.columns[:-1]:
+
+        normalized = []
+
+        for interval in discretized_df[col]:
+
+            left, right = interval
+
+            if left != float("-inf"):
+                left = round(float(left), 3)
+
+            if right != float("inf"):
+                right = round(float(right), 3)
+
+            normalized.append((left, right))
+
+        unique_vals = sorted(
+            list(set(normalized)),
+            key=str
+        )
+
+        print(f"\nKOLUMNA: {col}")
+        print(f"LICZBA PRZEDZIAŁÓW: {len(unique_vals)}")
+
+        for v in unique_vals:
+            left, right = v
+            print(f"({left}, {right})")
 
     end = time.perf_counter()
 
     execution_time = end - start
 
-    # liczba przedziałów
-    interval_count = count_intervals(
+    interval_count = count_unique_intervals(
         discretized_df
     )
 
-    # konflikty
     conflicts = find_conflicts(
         discretized_df
     )
@@ -86,12 +66,8 @@ def evaluate_algorithm(algorithm, df):
 
     return {
         "discretized_df": discretized_df,
-
         "execution_time": execution_time,
-
         "interval_count": interval_count,
-
         "conflict_count": conflict_count,
-
         "conflicts": conflicts
     }
