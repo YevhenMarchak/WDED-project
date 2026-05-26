@@ -1,8 +1,10 @@
 === RAPORT: team4 ===
 
-Czas wykonania: 0.009408 s
-Liczba przedziałów: 13
-Liczba konfliktów: 0
+Czas wykonania: 0.574991 s
+Liczba przedziałów: 85
+Liczba konfliktów: 6
 
 === KONFLIKTY ===
-Brak konfliktów
+134, 136
+392, 396
+773, 775

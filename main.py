@@ -61,7 +61,8 @@ def load_dataset(path):
     return df
 
 
-df = load_dataset("data/data0.csv")
+df = load_dataset("data/data3"
+                  ".csv")
 
 print(f"Wczytano dataset: {df.shape[0]} wierszy, "
       f"{df.shape[1]} kolumn (kolumny: {list(df.columns)})")
